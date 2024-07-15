@@ -1,0 +1,54 @@
+name: yt-dlp Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      video_url:
+        description: 'URL of the video to download'
+        required: true
+        type: string
+      format:
+        description: 'Format to download (e.g., best, bestvideo, bestaudio)'
+        required: false
+        default: 'best'
+        type: string
+      extract_audio:
+        description: 'Extract audio only (true/false)'
+        required: false
+        default: 'false'
+        type: boolean
+      audio_format:
+        description: 'Audio format if extracting audio (e.g., mp3, m4a)'
+        required: false
+        default: 'mp3'
+        type: string
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install yt-dlp
+      run: pip install yt-dlp
+
+    - name: Download video/audio
+      run: |
+        if [[ "${{ github.event.inputs.extract_audio }}" == 'true' ]]; then
+          yt-dlp -x --audio-format ${{ github.event.inputs.audio_format }} -f ${{ github.event.inputs.format }} ${{ github.event.inputs.video_url }}
+        else
+          yt-dlp -f ${{ github.event.inputs.format }} ${{ github.event.inputs.video_url }}
+        fi
+
+    - name: Upload to GitHub
+      uses: actions/upload-artifact@v2
+      with:
+        name: downloaded-media
+        path: '*.mp4, *.mp3, *.m4a'
